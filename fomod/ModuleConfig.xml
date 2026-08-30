@@ -79,10 +79,7 @@ One exception is on the next page: V-Sync must be enabled for the correct Skyrim
 
 This is the most tested path by a wide margin.
 
-Nothing is switched on yet. This only tells the mod which card to use when you do enable something in the menu.</description>
-              <files>
-                <file source="presets\nvidia\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
-              </files>
+The next step asks how you want the image handled. Frame generation itself stays off until you turn it on in the menu.</description>
               <conditionFlags>
                 <flag name="UFGU_Vendor">NVIDIA</flag>
               </conditionFlags>
@@ -96,10 +93,7 @@ Nothing is switched on yet. This only tells the mod which card to use when you d
 
 Frame generation on AMD is 2x.
 
-Nothing is switched on yet. This only tells the mod which card to use when you do enable something in the menu.</description>
-              <files>
-                <file source="presets\amd\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
-              </files>
+The next step asks how you want the image handled. Frame generation itself stays off until you turn it on in the menu.</description>
               <conditionFlags>
                 <flag name="UFGU_Vendor">AMD</flag>
               </conditionFlags>
@@ -113,10 +107,7 @@ Nothing is switched on yet. This only tells the mod which card to use when you d
 
 On Arc cards with the right hardware this can reach 3x and 4x. The menu offers whatever your driver reports.
 
-Nothing is switched on yet. This only tells the mod which card to use when you do enable something in the menu.</description>
-              <files>
-                <file source="presets\intel\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
-              </files>
+The next step asks how you want the image handled. Frame generation itself stays off until you turn it on in the menu.</description>
               <conditionFlags>
                 <flag name="UFGU_Vendor">Intel</flag>
               </conditionFlags>
@@ -129,6 +120,56 @@ Nothing is switched on yet. This only tells the mod which card to use when you d
         </group>
       </optionalFileGroups>
     </installStep>
+    <installStep name="Image quality and performance">
+      <optionalFileGroups order="Explicit">
+        <group name="Pick how Skyrim is rendered. Unlike the other pages, this one takes effect straight away" type="SelectExactlyOne">
+          <plugins order="Explicit">
+
+            <plugin name="Balanced: render lower, upscale to your screen">
+              <description>Skyrim renders at a lower resolution and the upscaler rebuilds it to your full screen resolution. On a 4K screen it renders at 1440p.
+
+This is the recommended choice. It looks close to native, runs considerably faster, and leaves headroom for frame generation.
+
+WHY THIS PAGE MATTERS. This mod hands anti-aliasing duty to the upscaler, because doing both would fight. If you pick the last option on this page nothing takes that duty over, and thin things like leaves, grass and railings break apart into flickering shapes. Choose this one unless you have a reason not to.</description>
+              <conditionFlags>
+                <flag name="UFGU_Upscaling">quality</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Recommended" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="Best image: render at full resolution">
+              <description>Skyrim renders at your full screen resolution and the upscaler is used only to clean the image up. NVIDIA calls this DLAA.
+
+This is the best the mod looks and the most demanding. On a 4K screen with a high frame generation multiplier it can run out of headroom and stutter. If that happens, reinstall and pick the first option, or lower the multiplier in the menu.</description>
+              <conditionFlags>
+                <flag name="UFGU_Upscaling">dlaa</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Optional" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="Off: no upscaling at all">
+              <description>Only pick this if you specifically want frame generation on its own, or you are tracking down a problem.
+
+READ THIS FIRST. With upscaling off, anti-aliasing has still been handed to an upscaler that is not running, so nothing anti-aliases the scene. Leaves, grass and railings will break into flickering shapes, and the game will look worse than it does with this mod uninstalled. That is expected with this option and is not a fault worth reporting.
+
+You can change this later in the mod's menu without reinstalling.</description>
+              <conditionFlags>
+                <flag name="UFGU_Upscaling">off</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Optional" />
+              </typeDescriptor>
+            </plugin>
+
+          </plugins>
+        </group>
+      </optionalFileGroups>
+    </installStep>
+
 
     <installStep name="Display and driver setup">
       <optionalFileGroups order="Explicit">
@@ -271,4 +312,90 @@ This installer does not edit ENB, ReShade, SSE Display Tweaks or game INI files.
     </installStep>
 
   </installSteps>
+
+  <conditionalFileInstalls>
+    <patterns>
+      <pattern>
+        <dependencies operator="And">
+          <flagDependency flag="UFGU_Vendor" value="NVIDIA" />
+          <flagDependency flag="UFGU_Upscaling" value="quality" />
+        </dependencies>
+        <files>
+          <file source="presets\nvidia-quality\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+        </files>
+      </pattern>
+      <pattern>
+        <dependencies operator="And">
+          <flagDependency flag="UFGU_Vendor" value="NVIDIA" />
+          <flagDependency flag="UFGU_Upscaling" value="dlaa" />
+        </dependencies>
+        <files>
+          <file source="presets\nvidia-dlaa\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+        </files>
+      </pattern>
+      <pattern>
+        <dependencies operator="And">
+          <flagDependency flag="UFGU_Vendor" value="NVIDIA" />
+          <flagDependency flag="UFGU_Upscaling" value="off" />
+        </dependencies>
+        <files>
+          <file source="presets\nvidia-off\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+        </files>
+      </pattern>
+      <pattern>
+        <dependencies operator="And">
+          <flagDependency flag="UFGU_Vendor" value="AMD" />
+          <flagDependency flag="UFGU_Upscaling" value="quality" />
+        </dependencies>
+        <files>
+          <file source="presets\amd-quality\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+        </files>
+      </pattern>
+      <pattern>
+        <dependencies operator="And">
+          <flagDependency flag="UFGU_Vendor" value="AMD" />
+          <flagDependency flag="UFGU_Upscaling" value="dlaa" />
+        </dependencies>
+        <files>
+          <file source="presets\amd-dlaa\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+        </files>
+      </pattern>
+      <pattern>
+        <dependencies operator="And">
+          <flagDependency flag="UFGU_Vendor" value="AMD" />
+          <flagDependency flag="UFGU_Upscaling" value="off" />
+        </dependencies>
+        <files>
+          <file source="presets\amd-off\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+        </files>
+      </pattern>
+      <pattern>
+        <dependencies operator="And">
+          <flagDependency flag="UFGU_Vendor" value="Intel" />
+          <flagDependency flag="UFGU_Upscaling" value="quality" />
+        </dependencies>
+        <files>
+          <file source="presets\intel-quality\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+        </files>
+      </pattern>
+      <pattern>
+        <dependencies operator="And">
+          <flagDependency flag="UFGU_Vendor" value="Intel" />
+          <flagDependency flag="UFGU_Upscaling" value="dlaa" />
+        </dependencies>
+        <files>
+          <file source="presets\intel-dlaa\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+        </files>
+      </pattern>
+      <pattern>
+        <dependencies operator="And">
+          <flagDependency flag="UFGU_Vendor" value="Intel" />
+          <flagDependency flag="UFGU_Upscaling" value="off" />
+        </dependencies>
+        <files>
+          <file source="presets\intel-off\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+        </files>
+      </pattern>
+    </patterns>
+  </conditionalFileInstalls>
 </config>
