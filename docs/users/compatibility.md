@@ -32,9 +32,13 @@ DLAA does not reduce their processing resolution.
 
 ## Community Shaders
 
-Community Shaders integration is currently unsupported. Disabling only its
-upscaling feature has not been validated as sufficient because both projects
-interact with renderer resources and timing.
+Community Shaders integration is untested. Neither compatibility nor a conflict
+has been confirmed, so treat the combination as unknown rather than as known
+broken. Both projects interact with renderer resources and timing, so if you run
+them together you are ahead of any testing we have done. Disabling only the
+Community Shaders upscaling feature has not been validated as sufficient either.
+
+If you do try it, a report either way is useful.
 
 ## Other renderer injectors
 

@@ -17,6 +17,9 @@ Do not post vulnerabilities, malicious files, unsanitized logs, credentials or
 personal paths in a public issue. Follow [SECURITY.md](SECURITY.md) for private
 security reporting.
 
-Unsupported combinations include Community Shaders, another upscaler or frame
-generator, DLSS Enabler, OptiScaler, and other presentation-hook replacements.
-Reports must first be reproduced without those conflicts.
+Unsupported combinations include another upscaler or frame generator, DLSS
+Enabler, OptiScaler, and other presentation-hook replacements. Reports must
+first be reproduced without those conflicts.
+
+Community Shaders is untested rather than known incompatible. Reports are
+welcome, but say whether it was active so the result is not misread.

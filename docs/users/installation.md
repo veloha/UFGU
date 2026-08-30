@@ -38,7 +38,8 @@ V-Sync-off override causes a moving horizontal tear during camera motion.
 
 Do not run UFGU with another upscaler, frame generator, DLSS Enabler,
 OptiScaler, or presentation-hook replacement. Community Shaders integration is
-not currently supported. See [compatibility](compatibility.md).
+untested, so support is not confirmed either way.
+See [compatibility](compatibility.md).
 
 ## Removal
 

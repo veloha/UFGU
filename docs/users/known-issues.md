@@ -19,7 +19,8 @@ UFGU disabled.
 
 ## Compatibility limits
 
-- Community Shaders integration is unsupported.
+- Community Shaders integration is untested. Support is not confirmed either
+  way, so it is unknown rather than known broken.
 - Do not combine UFGU with another upscaler, frame generator, DLSS Enabler,
   OptiScaler, or presentation-hook replacement.
 - ENB depth of field has not received a complete compatibility pass.
