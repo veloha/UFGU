@@ -1,0 +1,208 @@
+name: Repository policy
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate source repository
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = $env:GITHUB_WORKSPACE
+          $tracked = @(git -C $root ls-files)
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to enumerate tracked files."
+          }
+
+          $required = @(
+            "README.md",
+            "CONTRIBUTING.md",
+            "CODE_OF_CONDUCT.md",
+            "SUPPORT.md",
+            "SECURITY.md",
+            "LICENSE",
+            "CMakeLists.txt",
+            "CMakePresets.json",
+            "vcpkg.json",
+            "docs/README.md",
+            "docs/maintainers/licensing.md",
+            "docs/maintainers/provenance.md",
+            "docs/maintainers/verification.md"
+          )
+          $missing = @($required | Where-Object { -not (Test-Path -LiteralPath (Join-Path $root $_) -PathType Leaf) })
+          if ($missing.Count -ne 0) {
+            throw "Required repository files are missing: $($missing -join ', ')"
+          }
+
+          $forbiddenExtensions = @(
+            ".dll", ".exe", ".exp", ".ilk", ".lib", ".obj", ".pdb", ".idb", ".map",
+            ".7z", ".zip", ".rar", ".tar", ".gz", ".bz2", ".xz", ".cab", ".msi", ".iso",
+            ".log", ".dmp", ".bak", ".tmp", ".user", ".suo", ".db", ".sqlite",
+            ".mp4", ".mov", ".avi", ".mkv", ".bin", ".wasm", ".class", ".jar", ".nupkg", ".vsix"
+          )
+          $managedExtensions = @(".cs", ".csproj", ".vb", ".vbproj", ".fs", ".fsproj", ".xaml")
+          $forbidden = @($tracked | Where-Object { [IO.Path]::GetExtension($_).ToLowerInvariant() -in $forbiddenExtensions })
+          $managed = @($tracked | Where-Object { [IO.Path]::GetExtension($_).ToLowerInvariant() -in $managedExtensions })
+          if ($forbidden.Count -ne 0) {
+            throw "Forbidden build or archive files: $($forbidden -join ', ')"
+          }
+          if ($managed.Count -ne 0) {
+            throw "Managed UI or runtime files are not permitted: $($managed -join ', ')"
+          }
+
+          $forbiddenRoots = @("external/", "vendor/", "sdk/", "deps/", "third_party/", "out/", "build/", "package/")
+          $forbiddenPaths = @($tracked | Where-Object {
+            $candidate = $_.Replace("\", "/")
+            @($forbiddenRoots | Where-Object { $candidate.StartsWith($_, [StringComparison]::OrdinalIgnoreCase) }).Count -ne 0
+          })
+          if ($forbiddenPaths.Count -ne 0) {
+            throw "Local dependency, build, or package paths are tracked: $($forbiddenPaths -join ', ')"
+          }
+
+          $unexpectedModes = @(git -C $root ls-files --stage | Where-Object { $_ -notmatch "^100644 " })
+          if ($unexpectedModes.Count -ne 0) {
+            throw "Only regular non-executable files may be tracked: $($unexpectedModes -join ', ')"
+          }
+
+          $caseCollisions = @($tracked | Group-Object { $_.ToLowerInvariant() } | Where-Object Count -gt 1)
+          if ($caseCollisions.Count -ne 0) {
+            throw "Case-colliding paths are not permitted: $($caseCollisions.Name -join ', ')"
+          }
+
+          $allowedBinary = "fomod/images/header.png"
+          $strictUtf8 = [Text.UTF8Encoding]::new($false, $true)
+          foreach ($relative in $tracked) {
+            $normalized = $relative.Replace("\", "/")
+            $path = Join-Path $root $relative
+            $bytes = [IO.File]::ReadAllBytes($path)
+            if ($bytes.Length -gt 2097152) {
+              throw "Tracked file exceeds the 2 MiB source limit: $relative"
+            }
+            if ($normalized -eq $allowedBinary) {
+              $pngSignature = [byte[]](137, 80, 78, 71, 13, 10, 26, 10)
+              if ($bytes.Length -lt 8 -or (Compare-Object $pngSignature $bytes[0..7] -SyncWindow 0)) {
+                throw "The approved installer image is not a valid PNG: $relative"
+              }
+              continue
+            }
+            if ($bytes -contains 0) {
+              throw "Unexpected binary content is tracked: $relative"
+            }
+            try {
+              [void]$strictUtf8.GetString($bytes)
+            } catch {
+              throw "Tracked text is not valid UTF-8: $relative"
+            }
+          }
+
+          Get-Content -LiteralPath (Join-Path $root "vcpkg.json") -Raw | ConvertFrom-Json | Out-Null
+          Get-Content -LiteralPath (Join-Path $root "CMakePresets.json") -Raw | ConvertFrom-Json | Out-Null
+          Get-ChildItem -LiteralPath (Join-Path $root "fomod") -Filter "*.xml" -File | ForEach-Object {
+            [xml](Get-Content -LiteralPath $_.FullName -Raw) | Out-Null
+          }
+
+          $brokenLinks = [System.Collections.Generic.List[string]]::new()
+          $markdownFiles = @($tracked | Where-Object { [IO.Path]::GetExtension($_).ToLowerInvariant() -eq ".md" })
+          foreach ($relative in $markdownFiles) {
+            $file = Join-Path $root $relative
+            $content = Get-Content -LiteralPath $file -Raw
+            foreach ($match in [regex]::Matches($content, "\[[^\]]*\]\(([^)]+)\)")) {
+              $target = $match.Groups[1].Value.Trim().Trim("<", ">")
+              if ($target -match "^(?i:https?|mailto):" -or $target.StartsWith("#")) {
+                continue
+              }
+              $pathPart = ($target -split "#", 2)[0]
+              if ([string]::IsNullOrWhiteSpace($pathPart)) {
+                continue
+              }
+              $resolved = [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetDirectoryName($file)) $pathPart))
+              if (-not (Test-Path -LiteralPath $resolved)) {
+                $brokenLinks.Add("$relative -> $target")
+              }
+            }
+          }
+          if ($brokenLinks.Count -ne 0) {
+            throw "Broken local Markdown links: $($brokenLinks -join ', ')"
+          }
+
+          $codeFiles = @($tracked | Where-Object { [IO.Path]::GetExtension($_).ToLowerInvariant() -in @(".c", ".cpp", ".h", ".hpp", ".in", ".inl") })
+          $codeComments = @($codeFiles | ForEach-Object { Select-String -LiteralPath (Join-Path $root $_) -Pattern "//|/\*|\*/" })
+          if ($codeComments.Count -ne 0) {
+            throw "Project source is maintained as code-only input; document rationale in focused files under docs."
+          }
+
+          $cmakeFiles = @($tracked | Where-Object { $_ -eq "CMakeLists.txt" -or $_ -like "*/CMakeLists.txt" -or $_ -like "*.cmake" })
+          $cmakeComments = @($cmakeFiles | ForEach-Object { Select-String -LiteralPath (Join-Path $root $_) -Pattern "^\s*#" })
+          if ($cmakeComments.Count -ne 0) {
+            throw "Project CMake is maintained as code-only input; document rationale in focused files under docs."
+          }
+
+          $gitignoreComments = @(Get-Content -LiteralPath (Join-Path $root ".gitignore") | Select-String -Pattern "^\s*#")
+          if ($gitignoreComments.Count -ne 0) {
+            throw "Repository configuration rationale belongs in documentation."
+          }
+
+          $textFiles = @($tracked | Where-Object { $_.Replace("\", "/") -ne $allowedBinary })
+          $escapedBackslash = [regex]::Escape([string][char]92)
+          $unixHomePrefix = "/" + "home" + "/"
+          $unixUsersPrefix = "/" + "Users" + "/"
+          $personalPathPatterns = @(
+            "(?i)[A-Z]:${escapedBackslash}Users${escapedBackslash}[^${escapedBackslash}\r\n]+",
+            ([regex]::Escape($unixHomePrefix) + "[^/\r\n]+"),
+            ([regex]::Escape($unixUsersPrefix) + "[^/\r\n]+")
+          )
+          $personalPathHits = @($textFiles | ForEach-Object {
+            $path = Join-Path $root $_
+            $personalPathPatterns | ForEach-Object { Select-String -LiteralPath $path -Pattern $_ -CaseSensitive }
+          })
+          if ($personalPathHits.Count -ne 0) {
+            throw "Personal filesystem paths are not permitted in tracked content."
+          }
+
+          $secretPatterns = @(
+            "gh[pousr]_[A-Za-z0-9]{30,}",
+            "github_pat_[A-Za-z0-9_]{30,}",
+            "AKIA[0-9A-Z]{16}",
+            "-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----",
+            '(?i)(api[_-]?key|client[_-]?secret|access[_-]?token|password|passwd)\s*[:=]\s*[''"][^''"]{8,}[''"]'
+          )
+          $secretHits = @($textFiles | ForEach-Object {
+            $path = Join-Path $root $_
+            $secretPatterns | ForEach-Object { Select-String -LiteralPath $path -Pattern $_ }
+          })
+          if ($secretHits.Count -ne 0) {
+            throw "Possible credential or private-key material found in tracked content."
+          }
+
+          $installerText = @($tracked | Where-Object { $_ -like "fomod/*" -and [IO.Path]::GetExtension($_).ToLowerInvariant() -in @(".xml", ".ini", ".txt") })
+          $emDash = [char]0x2014
+          $installerDashHits = @($installerText | ForEach-Object { Select-String -LiteralPath (Join-Path $root $_) -Pattern $emDash })
+          if ($installerDashHits.Count -ne 0) {
+            throw "FOMOD text must not contain em dashes."
+          }
+
+          $licenceBlocker = Test-Path -LiteralPath (Join-Path $root "Licenses/PROJECT-LICENSE.txt") -PathType Leaf
+          if ($licenceBlocker) {
+            throw "The publication-blocker licence file must not coexist with the top-level LICENSE."
+          }
+
+          git -C $root show --check --format= HEAD
+          if ($LASTEXITCODE -ne 0) {
+            throw "Git whitespace validation failed."
+          }

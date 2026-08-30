@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "universal-frame-generation-upscaling",
+  "version-semver": "0.1.0",
+  "description": "Native upscaling and multi frame generation for Skyrim",
+  "builtin-baseline": "99e82d9c9f0b281ec11fba48cc8434574a2b6e66",
+  "dependencies": [
+    "rapidcsv",
+    "spdlog"
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
+        "COMMONLIBSSE_NG_ROOT": "$env{UFGU_COMMONLIBSSE_NG_ROOT}",
+        "STREAMLINE_SDK_ROOT": "$env{UFGU_STREAMLINE_SDK_ROOT}",
+        "MFG_DLSS_AMD_FIDELITYFX_ROOT": "$env{UFGU_AMD_FIDELITYFX_ROOT}",
+        "MFG_DLSS_AMD_ANTILAG_ROOT": "$env{UFGU_AMD_ANTILAG_ROOT}",
+        "MFG_DLSS_INTEL_XESS_ROOT": "$env{UFGU_INTEL_XESS_ROOT}",
+        "MFG_DLSS_STREAMLINE_APPLICATION_ID": "0"
+      }
+    },
+    {
+      "name": "dev",
+      "displayName": "UFGU development",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/out/build/dev",
+      "cacheVariables": {
+        "MFG_DLSS_PUBLIC_RELEASE_BUILD": "OFF"
+      }
+    },
+    {
+      "name": "public",
+      "displayName": "UFGU public package",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/out/build/public",
+      "cacheVariables": {
+        "MFG_DLSS_PUBLIC_RELEASE_BUILD": "ON",
+        "MFG_DLSS_PUBLIC_PACKAGE_DIR": "${sourceDir}/out/build/public/package"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "dev-release",
+      "configurePreset": "dev",
+      "configuration": "Release"
+    },
+    {
+      "name": "public-release",
+      "configurePreset": "public",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "dev-release",
+      "configurePreset": "dev",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "public-release",
+      "configurePreset": "public",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

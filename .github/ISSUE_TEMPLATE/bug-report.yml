@@ -1,0 +1,90 @@
+name: Bug report
+description: Report a reproducible UFGU fault with the evidence needed to investigate it.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        UFGU is beta software. Remove conflicting renderer injectors and read the troubleshooting guide before reporting.
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Skyrim runtime
+      options:
+        - 1.5.97 with SKSE 2.0.20
+        - 1.6.1170 with SKSE 2.2.6
+        - Other or unknown
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU and driver
+      placeholder: RTX 4070, driver 000.00
+    validations:
+      required: true
+  - type: input
+    id: display
+    attributes:
+      label: Resolution and refresh rate
+      placeholder: 2560x1440 at 144 Hz
+    validations:
+      required: true
+  - type: textarea
+    id: configuration
+    attributes:
+      label: UFGU configuration
+      description: List upscaling provider and mode, frame-generation vendor and multiplier, Reflex, Base FPS Cap, Output Frame Limit, ENB, and ReShade.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      placeholder: Give the shortest repeatable sequence from game launch.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: comparisons
+    attributes:
+      label: Comparison results
+      description: State what changes with frame generation off, upscaling off, UFGU disabled, ENB off, and ReShade off where applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Sanitized UFGU.log session
+      description: Attach one complete launch session or provide a permanent text link. Replace usernames, profile names and installation paths with <redacted>, but retain every line and all non-path values. If no log was created, state that explicitly.
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots or video
+      description: Attach focused evidence for visual defects when possible.
+  - type: checkboxes
+    id: conflicts
+    attributes:
+      label: Conflict check
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: I reproduced this without Community Shaders, another upscaler or frame generator, DLSS Enabler, OptiScaler, or another presentation-hook replacement.
+          required: true
+        - label: I removed credentials, personal paths and unrelated private data, and I did not include game files or copyrighted binaries.
+          required: true

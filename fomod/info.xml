@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<fomod>
+  <Name>Universal Frame Generation &amp; Upscaling</Name>
+  <Author>veloha</Author>
+  <Version MachineVersion="0.1.0">0.1.0 Release Candidate</Version>
+  <Website>https://github.com/veloha/UFGU</Website>
+  <Description>NVIDIA DLSS and DLAA, AMD FidelityFX FSR, and Intel XeSS upscaling and frame generation for Skyrim Special Edition 1.5.97 and 1.6.1170, through one in-game menu. Everything is switched off until you enable it. Press PageDown in game to open the menu. Project source and licence: https://github.com/veloha/UFGU</Description>
+  <Groups>
+    <element>Visuals and Graphics</element>
+    <element>Performance</element>
+    <element>Utilities for Players</element>
+  </Groups>
+</fomod>

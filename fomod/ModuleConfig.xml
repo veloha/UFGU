@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://qconsulting.ca/fo3/ModConfig5.0.xsd">
+  <moduleName>Universal Frame Generation &amp; Upscaling</moduleName>
+
+  <moduleImage path="fomod\images\header.png" showImage="true" showFade="true" height="-1" />
+
+  <requiredInstallFiles>
+    <folder source="SKSE" destination="SKSE" priority="0" />
+  </requiredInstallFiles>
+
+  <installSteps order="Explicit">
+
+    <installStep name="Before you install">
+      <optionalFileGroups order="Explicit">
+        <group name="Click each line to read it. All four apply to everyone." type="SelectAll">
+          <plugins order="Explicit">
+
+            <plugin name="Use a supported Skyrim version and matching SKSE">
+              <description>This build supports Skyrim Special Edition 1.5.97 with SKSE 2.0.20, or Skyrim 1.6.1170 with SKSE 2.2.6. It does not support VR or other Skyrim runtimes.
+
+If you are on a different version the mod simply will not start, and it will write the reason in its log. It cannot damage your game or your saves by being installed on the wrong version.
+
+You also need the Microsoft Visual C++ 2015-2022 Redistributable, x64. Most Skyrim setups already have it. This one is worth checking before you ask for help, because it is the only requirement that fails silently: without it the plugin cannot load at all, so it never gets the chance to write anything to its log. If SKSE reports that it could not load UFGU.dll and there is no UFGU.log, install the redistributable and try again.</description>
+              <typeDescriptor>
+                <type name="Required" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="Turn off any other frame generation or upscaling mod">
+              <description>Only one mod at a time can generate frames or upscale the image.
+
+If you already have another upscaler or frame generation mod installed, disable it in your mod manager before you play. Two of them will compete for the same part of the renderer, and the result is a broken picture, no frame generation at all, or a crash.
+
+Frame limiter mods are fine to keep. See the display page for how to set one up.</description>
+              <typeDescriptor>
+                <type name="Required" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="Leave Skyrim's anti-aliasing setting alone">
+              <description>Do not turn TAA off. This is the opposite of what other upscaler mods tell you, and it matters.
+
+This mod manages that setting for you while you play, and puts it back exactly as it was when you switch upscaling off. It needs TAA left on, because that is what makes Skyrim shift its view by a tiny amount each frame, and those tiny shifts are where the extra detail in the upscaled image comes from.
+
+If you force TAA off yourself, or an ENB preset or tool forces it off, the image gets softer and shimmers on thin edges like grass and railings.</description>
+              <typeDescriptor>
+                <type name="Required" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="ENB and ReShade are fine, keep them">
+              <description>You do not need to remove ENB or ReShade, and you do not need to change their settings to install this.
+
+This mod never edits ENB, ReShade, SSE Display Tweaks, your game INI files or your saves. It works alongside them.
+
+One exception is on the next page: V-Sync must be enabled for the correct SkyrimSE.exe in your graphics-driver settings, and ENB's ForceVSync option should be off.</description>
+              <typeDescriptor>
+                <type name="Required" />
+              </typeDescriptor>
+            </plugin>
+
+          </plugins>
+        </group>
+      </optionalFileGroups>
+    </installStep>
+
+    <installStep name="Your graphics card">
+      <optionalFileGroups order="Explicit">
+        <group name="Pick the card you have. This sets the mod up for it" type="SelectExactlyOne">
+          <plugins order="Explicit">
+
+            <plugin name="NVIDIA GeForce">
+              <description>Sets the mod up for NVIDIA: DLSS and DLAA for upscaling, and DLSS Frame Generation.
+
+This is the most tested path by a wide margin.
+
+Nothing is switched on yet. This only tells the mod which card to use when you do enable something in the menu.</description>
+              <files>
+                <file source="presets\nvidia\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+              </files>
+              <conditionFlags>
+                <flag name="UFGU_Vendor">NVIDIA</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Recommended" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="AMD Radeon">
+              <description>Sets the mod up for AMD: FidelityFX FSR for upscaling, and FidelityFX Frame Generation.
+
+Frame generation on AMD is 2x.
+
+Nothing is switched on yet. This only tells the mod which card to use when you do enable something in the menu.</description>
+              <files>
+                <file source="presets\amd\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+              </files>
+              <conditionFlags>
+                <flag name="UFGU_Vendor">AMD</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Optional" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="Intel Arc">
+              <description>Sets the mod up for Intel: XeSS for upscaling, and XeSS Frame Generation with Xe Low Latency.
+
+On Arc cards with the right hardware this can reach 3x and 4x. The menu offers whatever your driver reports.
+
+Nothing is switched on yet. This only tells the mod which card to use when you do enable something in the menu.</description>
+              <files>
+                <file source="presets\intel\UFGU.ini" destination="SKSE\Plugins\UFGU.ini" priority="1" />
+              </files>
+              <conditionFlags>
+                <flag name="UFGU_Vendor">Intel</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Optional" />
+              </typeDescriptor>
+            </plugin>
+
+          </plugins>
+        </group>
+      </optionalFileGroups>
+    </installStep>
+
+    <installStep name="Display and driver setup">
+      <optionalFileGroups order="Explicit">
+        <group name="Click each line to read it" type="SelectAll">
+          <plugins order="Explicit">
+
+            <plugin name="Turn V-Sync on for the correct SkyrimSE.exe">
+              <description>This is the single most common cause of a moving horizontal line across the screen.
+
+In the NVIDIA Control Panel, open Manage 3D Settings, then Program Settings. Add or select SkyrimSE.exe from the exact game folder that MO2 launches. Do not automatically choose the copy in Steam's Skyrim folder. Use it only if that is the copy your setup actually launches.
+
+Set "Vertical sync" to "On" for that program. Leave ENB's ForceVSync option off so the NVIDIA driver is the only place controlling V-Sync.
+
+AMD and Intel control panels have the same setting under a slightly different name. Enable it for the exact game copy you launch.
+
+If you ever see that line, this is the first thing to check.</description>
+              <typeDescriptor>
+                <type name="Required" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="You do not need to lower your frame cap">
+              <description>You will often see advice to set your frame cap a few frames below your monitor's refresh rate to leave headroom. You do not need to do that here.
+
+With V-Sync left on as above, capping at your refresh rate is fine. This was tested at a 240 cap on a 240 Hz display with no stutter and no tearing.
+
+If you already run a lower cap for latency reasons, keep it. It does no harm either way.</description>
+              <typeDescriptor>
+                <type name="Required" />
+              </typeDescriptor>
+            </plugin>
+
+          </plugins>
+        </group>
+      </optionalFileGroups>
+    </installStep>
+
+    <installStep name="How you will use it">
+      <optionalFileGroups order="Explicit">
+        <group name="What happens after you click install" type="SelectAll">
+          <plugins order="Explicit">
+
+            <plugin name="Everything starts switched off">
+              <description>Nothing is enabled after installing. Frame generation, upscaling and low-latency control are all off on purpose, so the mod cannot change your game until you ask it to.
+
+The only thing running is the small frame counter in the corner of the screen. It just displays two numbers (rendered frames and total frames) and does not turn any feature on.</description>
+              <typeDescriptor>
+                <type name="Required" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="Press PageDown in game to open the menu">
+              <description>Launch Skyrim through SKSE as normal, load a save, then press PageDown.
+
+Pick a provider (NVIDIA, AMD or Intel) and a quality mode. If your hardware or driver cannot do something, that option will refuse and tell you why rather than silently doing something else.
+
+Some changes need a game restart. The menu says so when that happens.</description>
+              <typeDescriptor>
+                <type name="Required" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="Advanced options are in UFGU.ini">
+              <description>Use the in-game menu for normal setup. For settings that are not shown in the menu, edit SKSE\Plugins\UFGU.ini inside the installed mod.
+
+This includes NVIDIA DLSS image presets such as L. The comments in UFGU.ini list the supported values.
+
+Only change settings you understand, restart Skyrim when required, and keep FrameLimit at 0.</description>
+              <typeDescriptor>
+                <type name="Required" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="If something looks wrong, the log explains it">
+              <description>The mod writes to:
+
+Documents\My Games\Skyrim Special Edition\SKSE\UFGU.log
+
+It records what it chose, what it refused, and why. Most problems are answered in the first twenty lines.
+
+When reporting a fault, include that file plus your GPU, driver version, monitor resolution and refresh rate, which options you had switched on, and whether the problem goes away with frame generation off.</description>
+              <typeDescriptor>
+                <type name="Required" />
+              </typeDescriptor>
+            </plugin>
+
+          </plugins>
+        </group>
+      </optionalFileGroups>
+    </installStep>
+
+    <installStep name="Frame generation pacing">
+      <optionalFileGroups order="Explicit">
+        <group name="Pick the mode you plan to use, and read its setup" type="SelectExactlyOne">
+          <plugins order="Explicit">
+
+            <plugin name="Fixed: a steady multiplier you pick (recommended)">
+              <description>Fixed multiplies your frame rate by a number you choose and keeps it there.
+
+How high you can go depends on your hardware, not on this choice. NVIDIA and Intel can reach 3x and 4x on cards that support it; AMD frame generation is 2x. Intel's own runtime also limits you to 2x if you run XeSS on a non-Intel card.
+
+You do not have to work any of that out. The menu asks your driver what it can do and only offers what comes back.
+
+Set ONE external frame limiter to a base frame rate your PC can genuinely hold in its heaviest area, such as a city at night or a busy exterior. If your base rate keeps dropping below that cap, lower the cap until it stays steady. A steady base is what makes generated frames look right.
+
+One heavily modded 4K test setup used 40 FPS. That is one system and one workload, not a number to copy.
+
+Leave FrameLimit at 0 in UFGU.ini. That is the correct setting and it is not a cap. Changing it will not fix uneven pacing.
+
+This installer does not touch your external limiter. You set that up yourself.</description>
+              <conditionFlags>
+                <flag name="UFGU_PacingGuidance">Fixed</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Recommended" />
+              </typeDescriptor>
+            </plugin>
+
+            <plugin name="Dynamic: the mod chooses the multiplier itself">
+              <description>Dynamic decides its own multiplier and paces its own output as the scene load changes.
+
+Turn your external base frame rate cap OFF for this mode. An external cap works against Dynamic's own pacing.
+
+Leave FrameLimit at 0 in UFGU.ini here as well.
+
+Dynamic cannot be combined with V-Sync, and it gives up the fixed multiplier you would get from the mode above. If you are unsure which to pick, choose Fixed.
+
+This installer does not edit ENB, ReShade, SSE Display Tweaks or game INI files.</description>
+              <conditionFlags>
+                <flag name="UFGU_PacingGuidance">Dynamic</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Optional" />
+              </typeDescriptor>
+            </plugin>
+
+          </plugins>
+        </group>
+      </optionalFileGroups>
+    </installStep>
+
+  </installSteps>
+</config>

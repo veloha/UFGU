@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup and usage questions
+    url: https://github.com/veloha/UFGU/discussions
+    about: Use Discussions for questions that are not reproducible bugs.
+  - name: Security reports
+    url: https://github.com/veloha/UFGU/security/policy
+    about: Follow the private reporting instructions. Do not disclose vulnerabilities publicly.
