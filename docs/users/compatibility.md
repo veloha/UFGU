@@ -2,10 +2,14 @@
 
 ## Game runtimes
 
+Each Skyrim version needs its own build of UFGU. One download does not cover
+both. Check which Skyrim version you are on before downloading, and take the
+build that matches it.
+
 | Skyrim runtime | SKSE | Support |
 |---|---:|---|
-| 1.5.97 | 2.0.20 | Supported and live tested |
-| 1.6.1170 | 2.2.6 | Supported and live tested on the current test system |
+| 1.5.97 | 2.0.20 | Needs the 1.5.97 build. Not yet released |
+| 1.6.1170 | 2.2.6 | Needs the 1.6.1170 build. Released and live tested |
 | Other Special Edition versions | Varies | Rejected unless an exact profile is added and tested |
 | Skyrim VR | VR build | Not supported |
 | GOG | Varies | Not currently planned or tested |

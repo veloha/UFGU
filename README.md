@@ -5,9 +5,10 @@ rendering plugin for Skyrim Special Edition. It provides NVIDIA DLSS and DLAA,
 AMD FidelityFX upscaling, Intel XeSS, and provider-specific frame generation
 through one in-game menu.
 
-UFGU is currently a beta project. Skyrim 1.5.97 and 1.6.1170 are supported as
-separate, exact runtime profiles. GPU capabilities still determine which
-providers, quality modes, and frame-generation multipliers can be enabled.
+UFGU is currently a beta project. Skyrim 1.5.97 and 1.6.1170 are handled as
+separate, exact runtime profiles, and **each one needs its own build**. A single
+download does not cover both. GPU capabilities still determine which providers,
+quality modes, and frame-generation multipliers can be enabled.
 
 ## Features
 
@@ -25,8 +26,8 @@ providers, quality modes, and frame-generation multipliers can be enabled.
 
 | Skyrim | SKSE | Status |
 |---|---:|---|
-| 1.5.97 | 2.0.20 | Supported and live tested |
-| 1.6.1170 | 2.2.6 | Supported and live tested |
+| 1.5.97 | 2.0.20 | Needs the 1.5.97 build. Not yet released |
+| 1.6.1170 | 2.2.6 | Needs the 1.6.1170 build. Released and live tested |
 | Skyrim VR | Not applicable | Not supported |
 
 See [compatibility](docs/users/compatibility.md) for GPU, ENB, ReShade, and

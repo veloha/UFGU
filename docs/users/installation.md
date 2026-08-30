@@ -2,8 +2,9 @@
 
 ## Requirements
 
-- Skyrim Special Edition 1.5.97 with SKSE 2.0.20, or Skyrim 1.6.1170 with SKSE
-  2.2.6
+- Skyrim Special Edition 1.6.1170 with SKSE 2.2.6, using the 1.6.1170 build, or
+  Skyrim 1.5.97 with SKSE 2.0.20, using the 1.5.97 build. Each game version
+  needs the build made for it; one download does not cover both
 - Address Library for SKSE Plugins for the installed Skyrim runtime
 - Microsoft Visual C++ 2015-2022 Redistributable, x64
 - Windows and a DirectX 12-capable GPU
