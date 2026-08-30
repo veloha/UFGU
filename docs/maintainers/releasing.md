@@ -5,7 +5,7 @@ configuration. Source and the binary FOMOD are separate artifacts.
 
 ## Package contract
 
-The validated package contains 36 allowlisted files under these roots:
+The validated package contains 42 allowlisted files under these roots:
 
 ```text
 fomod/
@@ -14,9 +14,35 @@ Licenses/
 SKSE/Plugins/
 ```
 
-The FOMOD installs the same binaries for every selection. Its graphics-card
-choice installs a generated provider preset over `SKSE/Plugins/UFGU.ini`.
-Presets are generated from `config/UFGU.ini`; do not maintain them by hand.
+The FOMOD installs the same binaries for every selection. Its graphics-card and
+image-quality choices together install a generated preset over
+`SKSE/Plugins/UFGU.ini` through `conditionalFileInstalls`, keyed on the
+`UFGU_Vendor` and `UFGU_Upscaling` flags. Nine presets are generated from
+`config/UFGU.ini`, one per card and upscaling mode; do not maintain them by hand.
+
+### The anchored Mode substitution
+
+`GenerateProviderPreset.cmake` rewrites the `[Upscaling]` `Mode` line by matching
+the comment that precedes it, not the bare key. `Mode=Off` appears under both
+`[Upscaling]` and `[Reflex]`, so replacing the key alone would switch Reflex on in
+every generated preset as a side effect. The comment used as the anchor is:
+
+```text
+; Provider or mode changes require a restart when requested by the menu.
+```
+
+Rewording that line in `config/UFGU.ini` breaks preset generation. The script
+fails with an explicit error rather than producing wrong presets, so the build
+stops instead of shipping them.
+
+### Why no preset ships with upscaling off by default
+
+The plugin hands anti-aliasing to the upscaler and holds Skyrim's own image-space
+TAA state false for the whole frame. With `Mode=Off` nothing performs the temporal
+resolve, so alpha-tested foliage breaks up. The installer therefore asks for an
+upscaling mode and recommends the balanced one. `Off` remains selectable for
+frame generation on its own, and both the installer and the release notes state
+that the image will look worse than with the mod uninstalled.
 
 The package contains zero Markdown files. Required notices whose vendor source
 uses a `.md` extension are preserved as `.txt` files. The exact-manifest

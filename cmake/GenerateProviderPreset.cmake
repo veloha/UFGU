@@ -23,9 +23,6 @@ if(generator_marker EQUAL -1 OR provider_marker EQUAL -1)
     message(FATAL_ERROR "Preset input is missing the canonical provider markers.")
 endif()
 
-# Mode=Off appears under both [Upscaling] and [Reflex], so the upscaling one is
-# reached through the comment that precedes only it. Replacing the bare key
-# would switch Reflex on as a side effect.
 set(mfgdlss_mode_anchor
     "; Provider or mode changes require a restart when requested by the menu.
 Mode=Off")
