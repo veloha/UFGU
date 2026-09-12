@@ -645,16 +645,47 @@ bool UpscalingPass::install()
         return false;
     }
 
-    auto& trampoline = SKSE::GetTrampoline();
     const auto main_draw =
         REL::ID(compatibility->address_ids.main_world_draw).address() +
         compatibility->hooks.main_draw_call;
-    original_main_draw_ = trampoline.write_call<5>(
-        main_draw,
-        main_draw_thunk);
     const auto post_processing =
         REL::ID(compatibility->address_ids.post_processing).address() +
         compatibility->hooks.post_processing_call;
+    const auto main_draw_preflight = preflight_direct_call(
+        main_draw,
+        compatibility->hooks.main_draw_call_signature);
+    const auto post_processing_preflight = preflight_direct_call(
+        post_processing,
+        compatibility->hooks.post_processing_call_signature);
+    const auto module_base = REL::Module::get().base();
+    logger::info(
+        "Hook preflight on {}: main draw call at rva 0x{:X} -> {} (target "
+        "rva 0x{:X}), post-processing call at rva 0x{:X} -> {} (target rva "
+        "0x{:X})",
+        compatibility->name,
+        main_draw - module_base,
+        hook_validation_failure_name(main_draw_preflight.failure),
+        main_draw_preflight.target != 0U ?
+            main_draw_preflight.target - module_base : 0U,
+        post_processing - module_base,
+        hook_validation_failure_name(post_processing_preflight.failure),
+        post_processing_preflight.target != 0U ?
+            post_processing_preflight.target - module_base : 0U);
+    if (!atomic_patch_allowed(
+            main_draw_preflight.valid(),
+            post_processing_preflight.valid())) {
+        logger::error(
+            "Main-draw and post-processing hooks refused on {}: the bytes at "
+            "the call sites do not match this runtime profile, so patching "
+            "them could corrupt the game's code. Nothing was patched",
+            compatibility->name);
+        return false;
+    }
+
+    auto& trampoline = SKSE::GetTrampoline();
+    original_main_draw_ = trampoline.write_call<5>(
+        main_draw,
+        main_draw_thunk);
     original_post_processing_ = trampoline.write_call<5>(
         post_processing,
         post_processing_thunk);

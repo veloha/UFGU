@@ -37,6 +37,31 @@ enum class HookValidationFailure : std::uint8_t
     unexpected_target,
 };
 
+[[nodiscard]] constexpr const char* hook_validation_failure_name(
+    const HookValidationFailure failure) noexcept
+{
+    switch (failure) {
+    case HookValidationFailure::none: return "none";
+    case HookValidationFailure::unreadable: return "unreadable";
+    case HookValidationFailure::no_expected_target_recorded:
+        return "no-expected-target-recorded";
+    case HookValidationFailure::not_executable: return "not-executable";
+    case HookValidationFailure::truncated_call: return "truncated-call";
+    case HookValidationFailure::wrong_opcode: return "wrong-opcode";
+    case HookValidationFailure::address_overflow: return "address-overflow";
+    case HookValidationFailure::target_outside_module:
+        return "target-outside-module";
+    case HookValidationFailure::target_not_executable:
+        return "target-not-executable";
+    case HookValidationFailure::signature_unapproved:
+        return "signature-unapproved";
+    case HookValidationFailure::invalid_signature: return "invalid-signature";
+    case HookValidationFailure::signature_mismatch: return "signature-mismatch";
+    case HookValidationFailure::unexpected_target: return "unexpected-target";
+    }
+    return "unknown";
+}
+
 struct HookValidationResult final
 {
     HookValidationFailure failure{HookValidationFailure::none};

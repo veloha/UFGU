@@ -5,9 +5,12 @@
 #include <sl.h>
 
 #include <filesystem>
+#include <string>
 
 namespace mfgdlss::streamline
 {
+[[nodiscard]] const std::string& runtime_engine_version();
+
 class Api final
 {
 public:

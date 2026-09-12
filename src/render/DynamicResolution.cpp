@@ -304,6 +304,40 @@ bool DynamicResolution::install() {
   kImageSpaceRuntimeStateOffset = compatibility->state.image_space_runtime_state;
   kRuntimeTaaEnabledOffset = compatibility->state.runtime_taa_enabled;
 
+  const auto resolution_address =
+      REL::ID(compatibility->address_ids.dynamic_resolution_update).address() +
+      compatibility->hooks.resolution_call;
+  const auto jitter_address =
+      REL::ID(compatibility->address_ids.temporal_jitter_update).address() +
+      compatibility->hooks.jitter_call;
+  const auto resolution_preflight = preflight_direct_call(
+      resolution_address, compatibility->hooks.resolution_call_signature);
+  const auto jitter_preflight = preflight_direct_call(
+      jitter_address, compatibility->hooks.jitter_call_signature);
+  const auto module_base = REL::Module::get().base();
+  logger::info(
+      "Hook preflight on {}: resolution call at rva 0x{:X} -> {} (target rva "
+      "0x{:X}), jitter call at rva 0x{:X} -> {} (target rva 0x{:X})",
+      compatibility->name, resolution_address - module_base,
+      hook_validation_failure_name(resolution_preflight.failure),
+      resolution_preflight.target != 0U
+          ? resolution_preflight.target - module_base
+          : 0U,
+      jitter_address - module_base,
+      hook_validation_failure_name(jitter_preflight.failure),
+      jitter_preflight.target != 0U ? jitter_preflight.target - module_base
+                                    : 0U);
+  if (!atomic_patch_allowed(resolution_preflight.valid(),
+                            jitter_preflight.valid())) {
+    logger::error(
+        "Dynamic-resolution and temporal-jitter hooks refused on {}: the "
+        "bytes at the call sites do not match this runtime profile, so "
+        "patching them could corrupt the game's code. Nothing was patched and "
+        "upscaling and frame generation stay unavailable",
+        compatibility->name);
+    return false;
+  }
+
   dynamic_resolution_setting_ =
       RE::GetINISetting("bEnableAutoDynamicResolution:Display");
   dynamic_resolution_clamp_setting_ =
@@ -390,14 +424,8 @@ bool DynamicResolution::install() {
 
   SKSE::AllocTrampoline(128);
   auto &trampoline = SKSE::GetTrampoline();
-  const auto resolution_address =
-      REL::ID(compatibility->address_ids.dynamic_resolution_update).address() +
-      compatibility->hooks.resolution_call;
   original_update_resolution_ =
       trampoline.write_call<5>(resolution_address, update_resolution_thunk);
-  const auto jitter_address =
-      REL::ID(compatibility->address_ids.temporal_jitter_update).address() +
-      compatibility->hooks.jitter_call;
   original_update_jitter_ =
       trampoline.write_call<5>(jitter_address, update_jitter_thunk);
 

@@ -85,17 +85,26 @@ int main() {
   check(ae->hooks.jitter_call == 0xE2);
   check(ae->hooks.main_draw_call == 0x17A);
   check(ae->hooks.post_processing_call == 0x1E7);
-  const auto check_unapproved_call = [&check](const CodeSignature &signature) {
-    check(signature.relative_offset == -8);
-    check(signature.length == 24);
-    check(signature.expected_target_rva == 0);
-    check(!signature.approved);
+  constexpr std::uint8_t se_resolution_call_bytes[]{
+      0xE9, 0x48, 0x8D, 0x0D, 0x43, 0xB8, 0xA7, 0x02,
+      0xE8, 0xEE, 0xBD, 0x7C, 0x00, 0x48, 0x8D, 0x0D,
+      0x37, 0x74, 0xA7, 0x02, 0xE8, 0x22, 0x90, 0x7B,
   };
-  check_unapproved_call(se->hooks.resolution_call_signature);
-  check_unapproved_call(se->hooks.jitter_call_signature);
-  check_unapproved_call(se->hooks.main_draw_call_signature);
-  check_unapproved_call(se->hooks.post_processing_call_signature);
-
+  constexpr std::uint8_t se_jitter_call_bytes[]{
+      0x02, 0xC6, 0x05, 0x3B, 0x27, 0x2C, 0x02, 0x01,
+      0xE8, 0x06, 0x2E, 0x01, 0x00, 0x48, 0x8B, 0x0D,
+      0xEF, 0xDC, 0x2B, 0x02, 0x48, 0x8B, 0x01, 0xFF,
+  };
+  constexpr std::uint8_t se_main_draw_call_bytes[]{
+      0xD2, 0x48, 0x8D, 0x0D, 0x11, 0x8E, 0x16, 0x02,
+      0xE8, 0xAC, 0xAC, 0xEA, 0xFF, 0x48, 0x8B, 0x05,
+      0x15, 0x61, 0x06, 0x02, 0x48, 0x8B, 0x48, 0x10,
+  };
+  constexpr std::uint8_t se_post_processing_call_bytes[]{
+      0x00, 0x48, 0x8B, 0x0D, 0x10, 0xC6, 0xEE, 0x01,
+      0xE8, 0x7B, 0x28, 0xFB, 0xFF, 0x48, 0x8B, 0x05,
+      0x1C, 0xE9, 0xF4, 0x01, 0x48, 0x8B, 0x88, 0x28,
+  };
   constexpr std::uint8_t ae_resolution_call_bytes[]{
       0xE9, 0x48, 0x8D, 0x0D, 0xF3, 0x8F, 0xC4, 0x02,
       0xE8, 0xBE, 0x4B, 0x81, 0x00, 0x48, 0x8D, 0x0D,
@@ -128,6 +137,31 @@ int main() {
           check(signature.mask[index] == 0xFF);
         }
       };
+  check_approved_call(se->hooks.resolution_call_signature,
+                      se_resolution_call_bytes, 0xD7CE40);
+  check_approved_call(se->hooks.jitter_call_signature, se_jitter_call_bytes,
+                      0xD7CFB0);
+  check_approved_call(se->hooks.main_draw_call_signature,
+                      se_main_draw_call_bytes, 0xD6A330);
+  check_approved_call(se->hooks.post_processing_call_signature,
+                      se_post_processing_call_bytes, 0x1297410);
+  const auto check_call_signature_shape = [&check](const CodeSignature &signature) {
+    check(signature.bytes[8] == 0xE8);
+    const auto displacement = static_cast<std::int32_t>(
+        static_cast<std::uint32_t>(signature.bytes[9]) |
+        (static_cast<std::uint32_t>(signature.bytes[10]) << 8U) |
+        (static_cast<std::uint32_t>(signature.bytes[11]) << 16U) |
+        (static_cast<std::uint32_t>(signature.bytes[12]) << 24U));
+    check(displacement != 0);
+  };
+  check_call_signature_shape(se->hooks.resolution_call_signature);
+  check_call_signature_shape(se->hooks.jitter_call_signature);
+  check_call_signature_shape(se->hooks.main_draw_call_signature);
+  check_call_signature_shape(se->hooks.post_processing_call_signature);
+  check_call_signature_shape(ae->hooks.resolution_call_signature);
+  check_call_signature_shape(ae->hooks.jitter_call_signature);
+  check_call_signature_shape(ae->hooks.main_draw_call_signature);
+  check_call_signature_shape(ae->hooks.post_processing_call_signature);
   check_approved_call(ae->hooks.resolution_call_signature,
                       ae_resolution_call_bytes, 0xE587F0);
   check_approved_call(ae->hooks.jitter_call_signature, ae_jitter_call_bytes,

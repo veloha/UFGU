@@ -28,7 +28,6 @@ namespace logger = SKSE::log;
 
 constexpr auto kApplicationId =
     static_cast<unsigned long long>(MFG_DLSS_STREAMLINE_APPLICATION_ID);
-using mfgdlss::streamline::kEngineVersionString;
 using mfgdlss::streamline::kProjectId;
 
 [[nodiscard]] std::string_view mode_name(
@@ -245,7 +244,7 @@ bool SuperResolution::ensure_ngx_controller()
         init_result = NVSDK_NGX_D3D11_Init_with_ProjectID(
             kProjectId.data(),
             NVSDK_NGX_ENGINE_TYPE_CUSTOM,
-            kEngineVersionString.data(),
+            runtime_engine_version().c_str(),
             data_path.c_str(),
             device_,
             &feature_info,

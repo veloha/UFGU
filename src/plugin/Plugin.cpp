@@ -209,38 +209,42 @@ void connect_enb()
                 &hooks.post_processing_call_signature,
                 &hooks.jitter_update_patch_signature,
                 &hooks.camera_state_patch_signature};
-        std::uint32_t approved = 0U;
-        std::uint32_t with_target = 0U;
-        for (const auto* const signature : signatures) {
-            approved += signature->approved ? 1U : 0U;
-            with_target +=
-                signature->expected_target_rva != 0U ? 1U : 0U;
+        constexpr std::size_t kDirectCallSignatures = 4U;
+        std::size_t approved = 0U;
+        std::size_t with_target = 0U;
+        for (std::size_t index = 0; index < signatures.size(); ++index) {
+            approved += signatures[index]->approved ? 1U : 0U;
+            if (index < kDirectCallSignatures) {
+                with_target +=
+                    signatures[index]->expected_target_rva != 0U ? 1U : 0U;
+            }
         }
         const auto complete =
             approved == signatures.size() &&
-            with_target == signatures.size();
+            with_target == kDirectCallSignatures;
         if (complete) {
             logger::info(
                 "Runtime profile: {}. All {} hook signatures are approved "
-                "and every one records an expected target address, so the "
-                "full hook set installs on this runtime",
+                "and all {} direct calls record an expected target address. "
+                "Each hook is still checked against the running executable "
+                "before it installs",
                 profile->name,
-                signatures.size());
+                signatures.size(),
+                kDirectCallSignatures);
         } else {
             logger::warn(
                 "Runtime profile: {}. THIS PROFILE IS INCOMPLETE: {} of {} "
-                "hook signatures are approved and {} of {} record an "
-                "expected target address. The hooks behind the missing "
-                "entries WILL NOT INSTALL, so features that depend on "
-                "them are unavailable on this runtime and their absence "
-                "is a gap in UFGU's profile rather than a fault in the "
-                "game. Completing it requires reading the byte patterns "
-                "and target addresses out of this exact executable",
+                "hook signatures are approved and {} of {} direct calls "
+                "record an expected target address. Hooks whose signature "
+                "cannot be verified are refused at install, so features "
+                "that depend on them are unavailable on this runtime and "
+                "their absence is a gap in UFGU's profile rather than a "
+                "fault in the game",
                 profile->name,
                 approved,
                 signatures.size(),
                 with_target,
-                signatures.size());
+                kDirectCallSignatures);
         }
         if (!complete) {
             const auto module_base =
@@ -328,10 +332,9 @@ void connect_enb()
                 logger::warn(
                     "SIGNATURE CAPTURE {}: function rva 0x{:X}, site rva "
                     "0x{:X}, relative_offset {}, length {}, bytes = {}{}. "
-                    "These are the values this runtime's profile needs. They "
-                    "cannot be read from the executable on disk because Steam "
-                    "encrypts .text, so capturing them from the running "
-                    "process is the only way to obtain them",
+                    "These are the values this runtime's profile needs, read "
+                    "from the running process where Steam's encryption of "
+                    ".text has already been removed",
                     label,
                     function - module_base,
                     site - module_base,
@@ -394,7 +397,7 @@ void on_skse_message(SKSE::MessagingInterface::Message* message)
     } else if (message->type == SKSE::MessagingInterface::kDataLoaded) {
         const auto dynamic_hooks =
             mfgdlss::render::DynamicResolution::instance().install();
-        const auto upscaling_hooks =
+        const auto upscaling_hooks = dynamic_hooks &&
             mfgdlss::render::UpscalingPass::instance().install();
         const auto overlay_input =
             mfgdlss::render::StatusOverlay::instance().install_input();

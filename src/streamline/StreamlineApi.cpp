@@ -1,6 +1,7 @@
 #include "streamline/StreamlineApi.hpp"
 
 #include "streamline/ProjectIdentity.hpp"
+#include "Version.hpp"
 
 #include <sl_security.h>
 
@@ -31,7 +32,6 @@ namespace logger = SKSE::log;
 constexpr std::uint32_t kNvidiaSampleApplicationId = 231313132;
 
 constexpr std::uint32_t kApplicationId = MFG_DLSS_STREAMLINE_APPLICATION_ID;
-constexpr std::string_view kEngineVersion = kEngineVersionString;
 
 [[nodiscard]] std::string_view result_name(const sl::Result result) noexcept
 {
@@ -106,6 +106,20 @@ void streamline_log(const sl::LogType type, const char* message)
 
 }
 
+const std::string& runtime_engine_version()
+{
+    static const std::string value = [] {
+        const auto version = REL::Module::get().version();
+        return engine_version_string(
+            version.major(),
+            version.minor(),
+            version.patch(),
+            version.build(),
+            kProjectVersion);
+    }();
+    return value;
+}
+
 Api& Api::instance() noexcept
 {
     static Api api;
@@ -148,7 +162,7 @@ bool Api::initialize()
         preferences.applicationId = kApplicationId;
     }
     preferences.engine = sl::EngineType::eCustom;
-    preferences.engineVersion = kEngineVersion.data();
+    preferences.engineVersion = runtime_engine_version().c_str();
     preferences.projectId = kProjectId.data();
     preferences.renderAPI = sl::RenderAPI::eD3D12;
 
@@ -174,7 +188,7 @@ bool Api::initialize()
             "NVIDIA-issued application ID, which is the supported alternative "
             "and avoids inheriting another title's driver profile)",
             kProjectId,
-            kEngineVersion);
+            runtime_engine_version());
     } else {
         logger::info("Streamline application ID: {}", kApplicationId);
     }
