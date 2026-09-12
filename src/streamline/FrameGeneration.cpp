@@ -387,6 +387,40 @@ bool FrameGeneration::apply_reflex_options(
     reflex_submitted_ = submitted;
     reflex_submitted_valid_ = true;
     reflex_effective_limit_ = application_frame_limit;
+    {
+        static std::uint32_t warned_limit = 0U;
+        static std::uint32_t warned_refresh = 0U;
+        const auto matches_refresh =
+            display_refresh_hz_ != 0U &&
+            application_frame_limit == display_refresh_hz_;
+        if (matches_refresh &&
+            (warned_limit != application_frame_limit ||
+             warned_refresh != display_refresh_hz_)) {
+            warned_limit = application_frame_limit;
+            warned_refresh = display_refresh_hz_;
+            logger::warn(
+                "OUTPUT RATE EQUALS DISPLAY REFRESH at {} FPS into {} "
+                "Hz ({}x generation, base cap {}). If the NVIDIA Control "
+                "Panel is forcing V-Sync off, the frame tears, and a tear "
+                "drifts at the difference between output and refresh. At "
+                "zero difference it stops drifting and sits as a NEAR "
+                "STATIONARY BAND, usually read as smearing or a woven "
+                "pattern in foliage rather than as tearing. CONFIRMED ON "
+                "HARDWARE at tick 304: 240 into 240 Hz showed it at 6x, 4x "
+                "and 3x alike, while the same 6x at 270, 360 and 480 was "
+                "clean. Output is base cap times multiplier whenever a base "
+                "cap is set, so a higher output cap does not move it. If you "
+                "see it, either move the base cap so the output is not {} "
+                "Hz, or set Vertical sync to Use the 3D application setting "
+                "in the NVIDIA Control Panel so the V-Sync this plugin "
+                "already requests actually engages",
+                application_frame_limit,
+                display_refresh_hz_,
+                divisor,
+                config::Settings::instance().base_frame_limit(),
+                display_refresh_hz_);
+        }
+    }
     logger::info(
         "NVIDIA Reflex: selected={}, submitted={}, output cap {} raised to a "
         "submitted target of {} because {}x generation is active and Streamline "
@@ -438,35 +472,6 @@ bool FrameGeneration::set_output_target_fps(
     frame_limit_ = decision.presentation_cap_fps;
     pacing_decision_ = decision;
     reflex_configured_ = true;
-    {
-        static std::uint32_t last_resonance_warning = 0U;
-        const auto matches_refresh =
-            display_refresh_hz_ != 0U &&
-            wanted_effective_limit == display_refresh_hz_;
-        if (matches_refresh &&
-            last_resonance_warning != wanted_effective_limit) {
-            last_resonance_warning = wanted_effective_limit;
-            logger::warn(
-                "OUTPUT RATE EQUALS DISPLAY REFRESH at {} FPS into {} "
-                "Hz. If the NVIDIA Control Panel is forcing V-Sync off, "
-                "the frame tears, and a tear drifts at the difference "
-                "between output and refresh. At zero difference it stops "
-                "drifting and sits as a NEAR STATIONARY BAND, usually "
-                "read as smearing or a woven pattern in foliage rather "
-                "than as tearing. CONFIRMED ON HARDWARE at tick 304: 240 "
-                "into 240 Hz showed it at 6x, 4x and 3x alike, while the "
-                "same 6x at 270, 360 and 480 was clean. If you see it, "
-                "either move the base cap so the output is not {} Hz, or "
-                "set Vertical sync to Use the 3D application setting in "
-                "the NVIDIA Control Panel so the V-Sync this plugin "
-                "already requests actually engages",
-                wanted_effective_limit,
-                display_refresh_hz_,
-                display_refresh_hz_);
-        } else if (!matches_refresh) {
-            last_resonance_warning = 0U;
-        }
-    }
     logger::info(
         "Pacing: requested output {} -> final Streamline presentation "
         "limit {} ({})",
