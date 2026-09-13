@@ -771,7 +771,7 @@ bool XessFrameGeneration::install_if_ready(
     params.creationNodeMask = 1U;
     params.visibleNodeMask = 1U;
 
-    params.uiMode = XEFG_SWAPCHAIN_UI_MODE_HUDLESS_UITEXTURE;
+    params.uiMode = XEFG_SWAPCHAIN_UI_MODE_BACKBUFFER_HUDLESS_UITEXTURE;
 
     result = state_->init_from_swap_chain(state_->handle, queue, &params);
     if (!xefg_ok(result)) {
@@ -816,9 +816,11 @@ bool XessFrameGeneration::install_if_ready(
             "xefgSwapChainSetUiCompositionState: " + xefg_result_text(result));
     }
     logger::info(
-        "XeSS-FG UI composition enabled in HUDLESS_UITEXTURE mode; the HUD is "
-        "composited from this plugin's premultiplied UI layer rather than "
-        "interpolated with the scene");
+        "XeSS-FG UI composition enabled in BACKBUFFER_HUDLESS_UITEXTURE mode; "
+        "the HUD is composited from this plugin's premultiplied UI layer "
+        "rather than interpolated with the scene, and anything else drawn "
+        "over the scene before Present is extracted from the back buffer so "
+        "generated frames keep it too");
 
     if (state_->set_num_interpolated_frames != nullptr) {
         state_->interpolated_frames = state_->maximum_interpolated_frames;
