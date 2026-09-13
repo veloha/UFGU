@@ -5,7 +5,6 @@
 #include <d3d11.h>
 #include <RE/Skyrim.h>
 
-#include <array>
 #include <atomic>
 #include <cstdint>
 
@@ -149,10 +148,6 @@ private:
         unsigned target_count,
         unsigned scene_index,
         ID3D11RenderTargetView* const* targets) noexcept;
-    void report_external_overlay_bind(
-        HMODULE overlay,
-        UINT target_count,
-        ID3D11RenderTargetView* const* targets) noexcept;
     [[nodiscard]] bool remap_full_resolution_ui_targets(
         UINT target_count,
         ID3D11RenderTargetView* const* targets,
@@ -287,7 +282,6 @@ private:
     bool ui_target_declined_this_frame_{};
     std::uint32_t declined_ui_target_reports_{};
     std::uint32_t scene_domain_bind_reports_{};
-    std::array<void*, 4> external_overlay_modules_logged_{};
     bool orphan_episode_logged_{};
 
     ID3D11DeviceContext* declined_probe_context_{};
