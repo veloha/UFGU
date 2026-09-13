@@ -17,9 +17,9 @@
           <plugins order="Explicit">
 
             <plugin name="Use a supported Skyrim version and matching SKSE">
-              <description>THIS DOWNLOAD IS FOR SKYRIM SPECIAL EDITION 1.6.1170 WITH SKSE 2.2.6 ONLY.
+              <description>THIS DOWNLOAD IS FOR SKYRIM SPECIAL EDITION 1.5.97 WITH SKSE 2.0.20 ONLY.
 
-Each Skyrim version needs its own build of this mod. This is not one download that covers both. If you are on Skyrim 1.5.97 with SKSE 2.0.20, stop here and get the 1.5.97 build instead. Installing this one on 1.5.97 is not what you want.
+Each Skyrim version needs its own build of this mod. This is not one download that covers both. If you are on Skyrim 1.6.1170 with SKSE 2.2.6, stop here and get the 1.6.1170 build instead. Installing this one on 1.6.1170 is not what you want.
 
 It does not support VR or any other Skyrim runtime.
 
