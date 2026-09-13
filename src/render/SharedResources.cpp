@@ -1023,6 +1023,7 @@ struct SharedResources::State
     bool first_temporal_input_logged{};
     bool first_upscaler_handoff_logged{};
     bool first_ui_capture_logged{};
+    bool output_target_after_ui_display_logged{};
 };
 
 SharedResources& SharedResources::instance() noexcept
@@ -1486,6 +1487,47 @@ void SharedResources::rebind_ui_target() noexcept
         static_cast<LONG>(height)};
     state_->d3d11_context->RSSetViewports(1, &viewport);
     state_->d3d11_context->RSSetScissorRects(1, &scissor);
+}
+
+void SharedResources::bind_output_target_after_ui_display() noexcept
+{
+    if (state_ == nullptr || !state_->ui_rendering) {
+        return;
+    }
+    const auto& presentation = PresentationBridge::instance();
+    auto* output_view = presentation.d3d11_back_buffer_view();
+    if (output_view == nullptr) {
+        return;
+    }
+    state_->d3d11_context->OMSetRenderTargets(1, &output_view, nullptr);
+
+    const auto width = presentation.output_width();
+    const auto height = presentation.output_height();
+    const D3D11_VIEWPORT viewport{
+        0.0F,
+        0.0F,
+        static_cast<float>(width),
+        static_cast<float>(height),
+        0.0F,
+        1.0F};
+    const D3D11_RECT scissor{
+        0,
+        0,
+        static_cast<LONG>(width),
+        static_cast<LONG>(height)};
+    state_->d3d11_context->RSSetViewports(1, &viewport);
+    state_->d3d11_context->RSSetScissorRects(1, &scissor);
+
+    if (!state_->output_target_after_ui_display_logged) {
+        state_->output_target_after_ui_display_logged = true;
+        logger::info(
+            "Scaleform display completed; the native output frame is bound "
+            "again at {}x{} instead of the transparent UI capture layer, so "
+            "anything drawn before Present without binding its own target "
+            "lands on the output frame as it would without UFGU",
+            width,
+            height);
+    }
 }
 
 void SharedResources::end_ui_rendering() noexcept

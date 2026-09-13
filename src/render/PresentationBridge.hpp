@@ -44,6 +44,8 @@ public:
     [[nodiscard]] ID3D11Device* d3d11_device() const noexcept;
     [[nodiscard]] ID3D11DeviceContext* d3d11_context() const noexcept;
     [[nodiscard]] ID3D11Texture2D* d3d11_back_buffer() const noexcept;
+    [[nodiscard]] ID3D11RenderTargetView*
+        d3d11_back_buffer_view() const noexcept;
     [[nodiscard]] ID3D11Texture2D* d3d11_render_buffer() const noexcept;
     [[nodiscard]] ID3D11RenderTargetView*
         d3d11_render_target_view() const noexcept;

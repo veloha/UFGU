@@ -2115,6 +2115,11 @@ ID3D11Texture2D *PresentationBridge::d3d11_back_buffer() const noexcept {
   return state_ != nullptr ? state_->shared_back_buffer_d3d11.Get() : nullptr;
 }
 
+ID3D11RenderTargetView *
+PresentationBridge::d3d11_back_buffer_view() const noexcept {
+  return state_ != nullptr ? state_->shared_back_buffer_view.Get() : nullptr;
+}
+
 ID3D11Texture2D *PresentationBridge::d3d11_render_buffer() const noexcept {
   if (state_ == nullptr) {
     return nullptr;

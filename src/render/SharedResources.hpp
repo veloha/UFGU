@@ -23,6 +23,7 @@ public:
     [[nodiscard]] bool begin_ui_rendering();
 
     void rebind_ui_target() noexcept;
+    void bind_output_target_after_ui_display() noexcept;
     void end_ui_rendering() noexcept;
     [[nodiscard]] bool ui_rendering() const noexcept;
     [[nodiscard]] ID3D11RenderTargetView*

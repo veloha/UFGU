@@ -349,6 +349,9 @@ void ScaleformBoundary::after_display(const RE::GViewport &viewport) noexcept {
 
 void ScaleformBoundary::note_display_completed() noexcept {
   inside_display_ = false;
+  if (ui_phase_opened_this_frame_) {
+    SharedResources::instance().bind_output_target_after_ui_display();
+  }
   if (stage_display_completed_logged_ || !ui_phase_opened_this_frame_) {
     return;
   }
