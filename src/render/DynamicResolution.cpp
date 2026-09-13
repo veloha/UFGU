@@ -882,6 +882,30 @@ void describe_caller(const void *const address,
   relative = reinterpret_cast<std::uintptr_t>(address) -
              reinterpret_cast<std::uintptr_t>(owner);
 }
+
+[[nodiscard]] HMODULE external_overlay_module(const void *const address) noexcept {
+  if (address == nullptr) {
+    return nullptr;
+  }
+  HMODULE owner{};
+  if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                             GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                         static_cast<LPCWSTR>(address), &owner) == 0 ||
+      owner == nullptr) {
+    return nullptr;
+  }
+  static const HMODULE game = GetModuleHandleW(nullptr);
+  static const HMODULE plugin = [] {
+    static const int anchor{};
+    HMODULE self{};
+    static_cast<void>(GetModuleHandleExW(
+        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        reinterpret_cast<LPCWSTR>(&anchor), &self));
+    return self;
+  }();
+  return owner == game || owner == plugin ? nullptr : owner;
+}
 }
 
 namespace {
@@ -1898,6 +1922,48 @@ void DynamicResolution::report_scene_domain_bind(
       resource_role(scene_identity), scene_width, scene_height);
 }
 
+void DynamicResolution::report_external_overlay_bind(
+    const HMODULE overlay, const UINT target_count,
+    ID3D11RenderTargetView *const *targets) noexcept {
+  for (auto *const logged : external_overlay_modules_logged_) {
+    if (logged == static_cast<void *>(overlay)) {
+      return;
+    }
+  }
+  auto slot = external_overlay_modules_logged_.end();
+  for (auto entry = external_overlay_modules_logged_.begin();
+       entry != external_overlay_modules_logged_.end(); ++entry) {
+    if (*entry == nullptr) {
+      slot = entry;
+      break;
+    }
+  }
+  if (slot == external_overlay_modules_logged_.end()) {
+    return;
+  }
+  *slot = static_cast<void *>(overlay);
+
+  const auto *const slot0_identity =
+      target_count > 0 ? identity_of(targets[0]) : nullptr;
+  std::array<char, MAX_PATH> caller_module{};
+  std::uintptr_t caller_relative{};
+  describe_caller(declined_caller_address_, caller_module, caller_relative);
+
+  logger::info(
+      "Overlay drawing from {}+0x{:X} bound the game surface during the "
+      "full-resolution UI phase outside any Scaleform display "
+      "(target-count={}, slot0-role={}, engine-render-target-index={}). It is "
+      "drawn straight onto the native output frame instead of the transparent "
+      "UI capture layer, exactly as it would be without UFGU, because a "
+      "layer composited as premultiplied alpha adds the scene back on top of "
+      "anything blended into it with its own alpha rules. Before this, ENB's "
+      "editor windows were captured that way and washed out over bright "
+      "scenes on Skyrim 1.5.97",
+      caller_module[0] != '\0' ? caller_module.data() : "unknown-module",
+      caller_relative, target_count, resource_role(slot0_identity),
+      engine_render_target_index(slot0_identity));
+}
+
 bool DynamicResolution::remap_full_resolution_ui_targets(
     const UINT target_count, ID3D11RenderTargetView *const *targets,
     ID3D11DepthStencilView *depth, ID3D11RenderTargetView **adjusted_targets,
@@ -1937,25 +2003,36 @@ bool DynamicResolution::remap_full_resolution_ui_targets(
   }
 
   if (!ScaleformBoundary::instance().inside_display()) {
-    for (UINT index = 0; index < target_count; ++index) {
-      if (engine_render_target_index(identity_of(targets[index])) !=
-          static_cast<int>(RE::RENDER_TARGETS::kFRAMEBUFFER)) {
-        continue;
+    if (const auto overlay =
+            external_overlay_module(declined_caller_address_);
+        overlay != nullptr) {
+      for (UINT index = 0; index < target_count; ++index) {
+        adjusted_targets[index] =
+            presentation.full_resolution_ui_target(targets[index]);
       }
-      if (!framebuffer_outside_display_logged_) {
-        framebuffer_outside_display_logged_ = true;
-        logger::warn(
-            "A kFRAMEBUFFER bind arrived during the full-resolution UI phase "
-            "but OUTSIDE any Scaleform display, so it is Skyrim's own scene "
-            "work rather than UI. It is being passed through to the native "
-            "target instead of being redirected into the UI capture layer. "
-            "Screen blood splatter is drawn exactly this way, which is why "
-            "frame generation died for as long as blood was on screen and "
-            "recovered the moment it faded, confirmed on hardware by veloha "
-            "on 2026-08-29. scene_domain_resource deliberately excludes "
-            "kFRAMEBUFFER, so nothing else caught this");
+      report_external_overlay_bind(overlay, target_count, targets);
+    } else {
+      for (UINT index = 0; index < target_count; ++index) {
+        if (engine_render_target_index(identity_of(targets[index])) !=
+            static_cast<int>(RE::RENDER_TARGETS::kFRAMEBUFFER)) {
+          continue;
+        }
+        if (!framebuffer_outside_display_logged_) {
+          framebuffer_outside_display_logged_ = true;
+          logger::warn(
+              "A kFRAMEBUFFER bind arrived during the full-resolution UI "
+              "phase but OUTSIDE any Scaleform display, so it is Skyrim's own "
+              "scene work rather than UI. It is being passed through to the "
+              "native target instead of being redirected into the UI capture "
+              "layer. Screen blood splatter is drawn exactly this way, which "
+              "is why frame generation died for as long as blood was on "
+              "screen and recovered the moment it faded, confirmed on "
+              "hardware by veloha on 2026-08-29. scene_domain_resource "
+              "deliberately excludes kFRAMEBUFFER, so nothing else caught "
+              "this");
+        }
+        return false;
       }
-      return false;
     }
   }
 
