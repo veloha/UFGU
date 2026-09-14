@@ -29,11 +29,17 @@ components and places each vendor runtime's licence and third-party notices
 beside that provider's DLLs. The exact-manifest validator rejects missing or
 unexpected files. Vendor SDK source, samples and tools are never staged.
 
-Do not publish a binary containing NVIDIA SDK redistributables until the exact
-SDK supplement has been reviewed, NVIDIA's software notification has been
-completed, and the required NVIDIA attribution and trademark placement have
-been verified for the release. Keep the release as a private draft until those
-steps are recorded. This engineering checklist is not a legal determination.
+A binary containing NVIDIA SDK redistributables ships NVIDIA's licence files
+beside those runtimes, names the features NVIDIA DLSS and NVIDIA Reflex in the
+in-game menu, uses no NVIDIA logos, and never implies that NVIDIA made or
+endorses UFGU. NVIDIA's runtimes stay under NVIDIA's terms and are not covered
+by the project licence.
+
+The NVIDIA RTX SDK supplement asks for a software notification before a
+commercial release. UFGU is free, so the notification is optional rather than
+a publication gate. It remains a good idea if the project is ever sold or
+bundled with something that is. This engineering checklist is not a legal
+determination.
 
 ## Release checklist
 
@@ -49,6 +55,7 @@ Before publishing a binary:
 1. Build and package from the exact reviewed source commit.
 2. Pass all 32 public tests and the exact 36-file package validator.
 3. Preserve every staged third-party notice.
-4. Complete NVIDIA's software notification and verify its required attribution.
+4. Keep NVIDIA's licence files, the NVIDIA DLSS and NVIDIA Reflex menu names,
+   and the no-logo, no-endorsement rule described above.
 5. Complete every other applicable vendor redistribution requirement.
 6. Record SHA-256 hashes for the source commit, DLL and final archive.

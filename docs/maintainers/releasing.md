@@ -87,9 +87,10 @@ SHA-256 manifest written beside the package directory.
    menu apply, restart-required transitions, and the built-in base limiter.
 9. Record physical GPU coverage precisely. Passing AMD or Intel runtime smoke
    tests on NVIDIA hardware is not Radeon or Arc acceptance.
-10. Keep the binary release private until NVIDIA's software notification is
-    complete and its required attribution and trademark placement have been
-    verified against the exact SDK supplement used for the build.
+10. Ship NVIDIA's licence files beside its runtimes, keep the menu naming
+    NVIDIA DLSS and NVIDIA Reflex, and never use NVIDIA logos or imply NVIDIA
+    endorsement. See [licensing](licensing.md) for why the software
+    notification is optional for this free release.
 11. Create the archive only after validation. Record SHA-256 for the source
     commit, built DLL, package manifest, and final archive.
 12. Repeat the build in a second empty tree and compare the DLL and package
